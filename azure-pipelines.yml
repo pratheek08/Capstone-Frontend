@@ -19,6 +19,7 @@ variables:
   imagePullSecret: 'pratheekacr28b27-auth'
 
   # Agent VM image name
+  pool: 'Default'
   vmImageName: 'pratheekVM'
 
 

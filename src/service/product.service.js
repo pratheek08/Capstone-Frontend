@@ -35,30 +35,29 @@
 
 import axios from "axios";
 
-const API_URL = "http://20.249.169.237:8080"; // ✅ Use the LoadBalancer port
+const API_URL = "http://20.249.169.237:8080";
 
 class ProductService {
-
     saveProduct(product) {
-        return axios.post(API_URL + "/saveProduct", product);
+        return axios.post(API_URL + "/saveProduct", product, { withCredentials: true });
     }
 
     getAllProduct() {
-        return axios.get(API_URL + "/");
+        return axios.get(API_URL + "/", { withCredentials: true });
     }
 
     getProductById(id) {
-        return axios.get(API_URL + "/" + id);
+        return axios.get(API_URL + "/" + id, { withCredentials: true });
     }
 
     deleteProduct(id) {
-        return axios.get(API_URL + "/deleteProduct/" + id);
+        return axios.get(API_URL + "/deleteProduct/" + id, { withCredentials: true });
     }
 
     editProduct(product) {
-        return axios.post(API_URL + "/editProduct/" + product.id, product);
+        return axios.post(API_URL + "/editProduct/" + product.id, product, { withCredentials: true });
     }
-
 }
 
 export default new ProductService();
+

@@ -30,7 +30,7 @@ stages:
     displayName: Build
     pool:
       name: Default
-      vmImage: $(vmImageName)
+      # vmImage: $(vmImageName)
     steps:
     - task: Docker@2
       displayName: Build and push an image to container registry
@@ -53,7 +53,8 @@ stages:
   - deployment: Deploy
     displayName: Deploy
     pool:
-      vmImage: $(vmImageName)
+      name: Default
+      # vmImage: $(vmImageName)
     environment: 'capfrontend.default'
     strategy:
       runOnce:

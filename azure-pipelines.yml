@@ -5,6 +5,9 @@
 trigger:
 - none
 
+pool:
+  name: Default
+
 resources:
 - repo: self
 
@@ -19,7 +22,6 @@ variables:
   imagePullSecret: 'pratheekacr28b27-auth'
 
   # Agent VM image name
-  pool: 'Default'
   # vmImageName: 'pratheekVM'
 
 

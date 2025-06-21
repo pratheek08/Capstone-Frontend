@@ -20,7 +20,7 @@ variables:
 
   # Agent VM image name
   pool: 'Default'
-  vmImageName: 'pratheekVM'
+  # vmImageName: 'pratheekVM'
 
 
 stages:

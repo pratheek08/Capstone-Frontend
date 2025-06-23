@@ -1,0 +1,226 @@
+trigger:
+  branches:
+    include:
+      - none
+ 
+variables:
+  imageRepository: 'myappfrontend'
+  containerRegistry: 'pratheekacrcapstone.azurecr.io'
+  imagePullSecret: 'pratheekacrcapstone3758a587-auth'
+  dockerfilePath: '**/Dockerfile'
+  azureserviceconnection: 'pratheekSConnNew'                  # ACR connection
+  aksServiceConnection1: 'KubernetesSConn-AKS-1'              # AKS Cluster 1 connection
+  aksServiceConnection2: 'KubernetesSConn-AKS-2'              # AKS Cluster 2 connection
+
+
+  # sonarServerUrl: 'http://20.64.226.218:80'
+  # sonarToken: 'sqa_a527604dbe244988a06e5721a851a81a3b8d4e11'
+  # sonarProjectKey: 'SAMPLE_SAMPLE1_AZeDqiX0G2cqNMbpNfE6'
+  # sonarProjectName: 'ReactFrontend'
+  # # SYNK_TOKEN: '329fa577-9eb3-45ef-8f7e-07f97f9f85d6'
+  # tag: 'latest'
+
+
+  NPM_CACHE_FOLDER: $(Pipeline.Workspace)/.npm
+ 
+pool:
+  name: 'Default'
+ 
+stages:
+- stage: FrontendBuildTest
+  displayName: 'Build, Test, Analyze React Frontend'
+  jobs:
+    - job: react_ci
+      displayName: 'CI for React Frontend'
+      steps:
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '20.x'
+          displayName: 'Install Node.js'
+ 
+        - task: Cache@2
+          inputs:
+            key: 'npm | "$(Agent.OS)" | package-lock.json'
+            restoreKeys: |
+              npm | "$(Agent.OS)"
+              npm
+            path: $(NPM_CACHE_FOLDER)
+          displayName: 'Cache npm packages'
+ 
+        - script: npm config set cache $(NPM_CACHE_FOLDER) --global
+          displayName: 'Set npm cache path'
+ 
+        - script: npm install
+          displayName: 'Install React Dependencies'
+ 
+        - script: npm run build
+          displayName: 'Build React App'
+ 
+        - script: |
+            echo "Running React tests..."
+            CI=true npm test -- --watchAll=false || echo "Tests failed. Continuing."
+          displayName: 'Run React Tests (Optional)'
+          continueOnError: true
+ 
+        - script: |
+            echo "Generating coverage report..."
+            CI=true npm test -- --coverage --watchAll=false || echo "Coverage failed. Continuing."
+          displayName: 'Generate Coverage'
+          continueOnError: true
+ 
+        # - script: |
+        #     echo "Downloading and running SonarQube scanner..."
+        #     wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+        #     unzip -q sonar-scanner-cli-4.8.0.2856-linux.zip -d sonar
+        #     export PATH="$PWD/sonar/sonar-scanner-4.8.0.2856-linux/bin:$PATH"
+        #     sonar-scanner \
+        #       -Dsonar.projectKey=$(sonarProjectKey) \
+        #       -Dsonar.projectName=$(sonarProjectName) \
+        #       -Dsonar.sources=. \
+        #       -Dsonar.exclusions=node_modules/**,**/*.test.js \
+        #       -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+        #       -Dsonar.host.url=$(sonarServerUrl) \
+        #       -Dsonar.login=$(sonarToken)
+        #   displayName: 'Run SonarQube CLI Analysis'
+        #   env:
+        #     sonarToken: $(sonarToken)
+ 
+        - script: |
+            echo "Running ESLint..."
+            npm run lint || echo "Linting failed but continuing"
+          displayName: 'Run ESLint (non-blocking)'
+          continueOnError: true
+ 
+        - task: Docker@2
+          displayName: 'Build Docker Image'
+          inputs:
+            command: 'build'
+            repository: $(imageRepository)
+            dockerfile: $(dockerfilePath)
+            containerRegistry: $(azureserviceconnection)
+            tags: |
+              $(tag)
+ 
+        - script: |
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+          displayName: 'Install Trivy'
+ 
+        - script: |
+            ./bin/trivy image --severity HIGH,CRITICAL --exit-code 0 $(containerRegistry)/$(imageRepository):$(tag)
+          displayName: 'Run Trivy Scan (Allow HIGH/CRITICAL, No Break)'
+          continueOnError: true
+ 
+        - task: Docker@2
+          displayName: 'Push Docker Image to ACR'
+          inputs:
+            command: 'push'
+            repository: $(imageRepository)
+            dockerfile: $(dockerfilePath)
+            containerRegistry: $(azureserviceconnection)
+            tags: |
+              $(tag)
+ 
+- stage: SecurityScan
+  displayName: 'Snyk Security Scan'
+  dependsOn: FrontendBuildTest
+  jobs:
+    - job: snyk_scan
+      displayName: 'Run Snyk on React App'
+      steps:
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '20.x'
+          displayName: 'Ensure Node.js for Snyk'
+ 
+        - script: |
+            echo "Installing Snyk CLI..."
+            npm install -g snyk
+          displayName: 'Install Snyk CLI'
+ 
+        - script: |
+            echo "Authenticating with Snyk..."
+            snyk auth $(SYNK_TOKEN)
+          displayName: 'Authenticate Snyk'
+          env:
+            SYNK_TOKEN: $(SYNK_TOKEN)
+ 
+        - script: |
+            echo "Running Snyk Test for all projects..."
+            snyk test --all-projects --severity-threshold=medium --json > snyk-report.json || true
+          displayName: 'Run Snyk Test (non-blocking)'
+ 
+        - script: cat snyk-report.json
+          displayName: 'Display Snyk Report'
+ 
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: 'snyk-report.json'
+            ArtifactName: 'snyk-report'
+            publishLocation: 'Container'
+          displayName: 'Publish Snyk Report Artifact'
+ 
+- stage: DeployFrontend
+  displayName: Deploy Frontend to Cluster 1
+  dependsOn: FrontendBuildTest
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy to Kubernetes
+    environment: 'Frontend-AKS-1-pratheek-AKS1-default-1750702575160'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(azureserviceconnection)
+              kubernetesServiceConnection: $(aksServiceConnection1)
+ 
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                manifests/deployment.yml
+                manifests/service.yml
+                manifests/hpa.yml
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)
+              kubernetesServiceConnection: $(aksServiceConnection1)
+#--------------------------------------------------------------------------------------------
+- stage: DeployFrontend2
+  displayName: Deploy Frontend to Cluster 2
+  dependsOn: FrontendBuildTest
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy to Kubernetes2
+    environment: 'Frontend-AKS-2-pratheek-AKS1-default-1750702862641'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(azureserviceconnection)
+              kubernetesServiceConnection: $(aksServiceConnection2)
+ 
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster2
+            inputs:
+              action: deploy
+              manifests: |
+                manifests/deployment.yml
+                manifests/service.yml
+                manifests/hpa.yml
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)
+              kubernetesServiceConnection: $(aksServiceConnection2)

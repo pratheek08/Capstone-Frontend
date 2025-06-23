@@ -16,7 +16,7 @@ variables:
   containerRegistry: 'pratheekacrcapstone.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
-  imagePullSecret: 'pratheekacrcapstone21c1-auth'
+  imagePullSecret: 'pratheekacr28b27-auth'
 
   # Agent VM image name
   # vmImageName: 'ubuntu-latest'

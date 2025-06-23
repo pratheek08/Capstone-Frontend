@@ -15,6 +15,6 @@ spec:
       containers:
         - name: frontend 
           imagePullPolicy: Always
-          image: pratheekacr2.azurecr.io/frontend
+          image: pratheekacrcapstone.azurecr.io
           ports:
           - containerPort: 80

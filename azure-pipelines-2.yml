@@ -4,6 +4,7 @@ trigger:
       - none
  
 variables:
+  dockerRegistryServiceConnection: 'dockerSConnCapstone'
   imageRepository: 'myappfrontend'
   containerRegistry: 'pratheekacrcapstone.azurecr.io'
   imagePullSecret: 'pratheekacrcapstone3758a587-auth'
@@ -97,7 +98,7 @@ stages:
             command: 'build'
             repository: $(imageRepository)
             dockerfile: $(dockerfilePath)
-            containerRegistry: $(azureserviceconnection)
+            containerRegistry: $(dockerRegistryServiceConnection)
             tags: |
               $(tag)
  
@@ -116,7 +117,7 @@ stages:
             command: 'push'
             repository: $(imageRepository)
             dockerfile: $(dockerfilePath)
-            containerRegistry: $(azureserviceconnection)
+            containerRegistry: $(dockerRegistryServiceConnection)
             tags: |
               $(tag)
  
@@ -175,7 +176,7 @@ stages:
             inputs:
               action: createSecret
               secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(azureserviceconnection)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
               kubernetesServiceConnection: $(aksServiceConnection1)
  
           - task: KubernetesManifest@0
@@ -208,7 +209,7 @@ stages:
             inputs:
               action: createSecret
               secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(azureserviceconnection)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
               kubernetesServiceConnection: $(aksServiceConnection2)
  
           - task: KubernetesManifest@0

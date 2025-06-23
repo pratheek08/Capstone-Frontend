@@ -13,7 +13,7 @@ variables:
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: '20f1f803-5141-454f-9f88-15c425c1a782'
   imageRepository: 'frontend'
-  containerRegistry: 'pratheekacr2.azurecr.io'
+  containerRegistry: 'pratheekacrcapstone.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
   imagePullSecret: 'pratheekacr28b27-auth'

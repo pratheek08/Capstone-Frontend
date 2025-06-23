@@ -18,7 +18,7 @@ variables:
   # sonarToken: 'sqa_a527604dbe244988a06e5721a851a81a3b8d4e11'
   # sonarProjectKey: 'SAMPLE_SAMPLE1_AZeDqiX0G2cqNMbpNfE6'
   # sonarProjectName: 'ReactFrontend'
-  # # SYNK_TOKEN: '329fa577-9eb3-45ef-8f7e-07f97f9f85d6'
+  SYNK_TOKEN: 'de192aa6-95db-4bc7-8ca5-8b2696adf6a6'
   tag: 'latest'
 
 

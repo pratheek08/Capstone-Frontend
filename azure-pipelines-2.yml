@@ -19,7 +19,7 @@ variables:
   # sonarProjectKey: 'SAMPLE_SAMPLE1_AZeDqiX0G2cqNMbpNfE6'
   # sonarProjectName: 'ReactFrontend'
   # # SYNK_TOKEN: '329fa577-9eb3-45ef-8f7e-07f97f9f85d6'
-  # tag: 'latest'
+  tag: 'latest'
 
 
   NPM_CACHE_FOLDER: $(Pipeline.Workspace)/.npm

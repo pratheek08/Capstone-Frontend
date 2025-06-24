@@ -35,7 +35,7 @@
 
 import axios from "axios";
 
-const API_URL = "http://20.53.16.107:8080";
+const API_URL = "http://2135.149.185.147:8080";
 
 class ProductService {
     saveProduct(product) {

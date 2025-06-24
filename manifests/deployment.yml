@@ -1,20 +1,20 @@
 apiVersion : apps/v1
 kind: Deployment
 metadata:
-  name: frontend 
+  name: myappfrontend 
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: myappfrontend
   template:
     metadata:
       labels:
-        app: frontend 
+        app: myappfrontend 
     spec:
       containers:
-        - name: frontend 
+        - name: myappfrontend 
           imagePullPolicy: Always
-          image: pratheekacrcapstone.azurecr.io
+          image: pratheekacrcapstone.azurecr.io/myappfrontend:latest
           ports:
           - containerPort: 80
